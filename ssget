@@ -1,0 +1,189 @@
+#!/usr/bin/env bash
+
+set -e
+
+THIS_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" &>/dev/null && pwd )
+SS_URL="https://sparse.tamu.edu"
+ARCHIVE_LOCATION="${HOME}/.config/ssget/"
+
+mkdir -p "${ARCHIVE_LOCATION}"
+
+COMMAND=
+MATRIX_TYPE="MM"
+MATRIX_ID=1
+PROP_NAMES=(
+    "group"
+    "name"
+    "rows"
+    "cols"
+    "nonzeros"
+    "real"
+    "binary"
+    "2d3d"
+    "posdef"
+    "psym"
+    "nsym"
+    "kind")
+
+
+redownload_info() {
+    curl -Lo "${ARCHIVE_LOCATION}/ssstats.csv" "${SS_URL}/files/ssstats.csv"
+}
+
+
+download_info() {
+    if [ ! -f "${ARCHIVE_LOCATION}/ssstats.csv" ]; then
+        redownload_info
+    fi
+}
+
+
+get_properties() {
+    download_info
+    head -$((${MATRIX_ID} + 2)) "${ARCHIVE_LOCATION}/ssstats.csv" | tail -1
+}
+
+
+get_property() {
+    IFS="," read -ra PROPS <<< $(get_properties)
+    NPARAM=${#PROP_NAMES[@]}
+    for (( i=0; i < ${NPARAM}; ++i)); do
+        if [ "$1" = "${PROP_NAMES[$i]}" ]; then
+            echo ${PROPS[$i]}
+            return
+        fi
+    done
+}
+
+
+get_as_json() {
+    BOOL_MAP=("false" "true")
+    IFS="," read -ra PROPS <<< $(get_properties)
+    cat << JSON 
+{
+    "group": "${PROPS[0]}",
+    "name": "${PROPS[1]}",
+    "rows": ${PROPS[2]},
+    "cols": ${PROPS[3]},
+    "nonzeros": ${PROPS[4]},
+    "real": ${BOOL_MAP[${PROPS[5]}]},
+    "binary": ${BOOL_MAP[${PROPS[6]}]},
+    "2d3d": ${BOOL_MAP[${PROPS[7]}]},
+    "posdef": ${BOOL_MAP[${PROPS[8]}]},
+    "psym": ${PROPS[9]},
+    "nsym": ${PROPS[10]},
+    "kind": "${PROPS[11]}"
+}
+JSON
+}
+
+
+download_archive() {
+    GROUP=$(get_property group)
+    NAME=$(get_property name)
+
+    mkdir -p "${ARCHIVE_LOCATION}/${MATRIX_TYPE}/${GROUP}"
+    if [ "${MATRIX_TYPE}" = "mat" ]; then 
+        EXT="mat"
+    else
+        EXT="tar.gz"
+    fi
+    DOWNLOAD_PATH="${ARCHIVE_LOCATION}/${MATRIX_TYPE}/${GROUP}/${NAME}.${EXT}"
+    if [ ! -f ${DOWNLOAD_PATH} ]; then
+        curl -Lo "${DOWNLOAD_PATH}" \
+            "${SS_URL}/${MATRIX_TYPE}/${GROUP}/${NAME}.${EXT}"
+    fi
+    echo "${DOWNLOAD_PATH}"
+}
+
+
+get_collection_size() {
+    download_info
+    head -1 "${ARCHIVE_LOCATION}/ssstats.csv"
+}
+
+
+get_database_version() {
+    download_info
+    echo "ssstats.csv $(head -2 "${ARCHIVE_LOCATION}/ssstats.csv" | tail -1)"
+}
+
+
+print_usage_and_exit() {
+    cat 1>&2 << EOT
+Usage: $0 [options]
+
+Available options:
+    -h           show this help
+    -d           (re)download matrix info file
+    -t TYPE      matrix type, TYPE is one of: MM (matrix market, '.mtx'), RB
+                 (Rutherford Boeing, '.rb'), mat (MATLAB, '.mat')
+    -i           matrix id
+    -p PROPERTY  print information about the matrix, PROPERTY is the propery to
+                 print, one of group, name, rows, cols, nonzeros, real, binary,
+                 2d3d, posdef, psym, nsym, kind
+    -j           print information about the matrix in JSON format
+    -f           download matrix and get path to archive
+    -n           get number of matrices in collection
+    -v           get database version
+EOT
+    exit $1
+}
+
+
+while getopts ":hdt:i:p:jfnv" opt; do
+    case ${opt} in
+        :)
+            echo 1>&2 "Option -${OPTARG} provided without an argument"
+            print_usage_and_exit 2
+            ;;
+        \?)
+            echo 1>&2 "Unknown option: -${OPTARG}"
+            print_usage_and_exit 1
+            ;;
+        h)
+            print_usage_and_exit 0
+            ;;
+        d)
+            COMMAND="redownload_info"
+            ;;
+        t) 
+            if [[ ! "${OPTARG}" =~ ^(MM|RB|mat)$ ]]; then
+                echo 1>&2 "Wrong matrix type: ${OPTARG}"
+                print_usage_and_exit 3
+            fi
+            MATRIX_TYPE=${OPTARG}
+            ;;
+        i)
+            if [[ ! "${OPTARG}" =~ ^([0-9]+)$ ]]; then
+                echo 1>&2 "Matrix ID has to be a number, got: ${OPTARG}"
+                print_usage_and_exit 4
+            fi
+            MATRIX_ID=${OPTARG}
+            ;;
+        p)
+            PROP_LIST="group|name|rows|cols|nonzeros"
+            PROP_LIST="${PROP_LIST}|real|binary|2d3d|posdef|psym|nsym|kind"
+            if [[ ! "${OPTARG}" =~ ^(${PROP_LIST})$ ]]; then
+                echo 1>&2 "Unknown property: ${OPTARG}"
+                print_usage_and_exit 5
+            fi
+            COMMAND="get_property ${OPTARG}"
+            ;;
+        j)
+            COMMAND="get_as_json"
+            ;;
+        f)  
+            COMMAND="download_archive"
+            ;;
+        n)
+            COMMAND="get_collection_size"
+            ;;
+        v)
+            COMMAND="get_database_version"
+            ;;
+    esac
+done
+
+
+${COMMAND}
