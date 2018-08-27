@@ -70,9 +70,14 @@ download_info() {
 }
 
 
+PROPS=""
 get_properties() {
     download_info
-    head -$((${MATRIX_ID} + 2)) "${ARCHIVE_LOCATION}/ssstats.csv" | tail -1
+    if [ "${PROPS}" == "" ]; then
+        PROPS=$(head -$((${MATRIX_ID} + 2)) "${ARCHIVE_LOCATION}/ssstats.csv" \
+                | tail -1)
+    fi
+    echo ${PROPS}
 }
 
 
@@ -135,8 +140,6 @@ EOT
 
 download_archive() {
     PATH_INFO=($(get_path_info))
-    echo "${PATH_INFO[@]}"
-
     if [ ! -f ${PATH_INFO[4]} ]; then
         curl -Lo ${PATH_INFO[4]} ${PATH_INFO[3]}
     fi

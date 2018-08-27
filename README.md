@@ -58,6 +58,67 @@ Available options:
 Calling ssget without arguments is equivalent to: ssget -i 0 -t MM -v
 ```
 
+Examples
+--------
+
+
+### Example 1
+
+Return properties of all matrices as a JSON array:
+
+```sh
+NUM_PROBLEMS=$(ssget -n)
+
+echo "["
+for (( i=1; i <= ${NUM_PROBLEMS}; ++i )); do
+    ssget -i $i -j
+    echo ","
+done
+echo "]"
+```
+
+
+### Example 2
+
+Download matrix arhives for the entire collection, and print the size:
+
+```sh
+NUM_PROBLEMS=$(ssget -n)
+
+TOTAL_SIZE=0
+
+for (( i=1; i <= ${NUM_PROBLEMS}; ++i )); do
+    # ssget -i $i -j
+    ARCHIVE=$(ssget -i $i -f)
+    SIZE=($(du -k ${ARCHIVE}))
+    echo "${ARCHIVE}: ${SIZE}KB"
+    TOTAL_SIZE=$((${TOTAL_SIZE} + ${SIZE}))
+done
+
+echo "Total: ${TOTAL_SIZE}KB"
+```
+
+__NOTE:__ This will transfer and store a huge amount of data!
+
+
+### Example 3
+Extract (and download if needed) the matrix with ID=10, pass its location to
+the program `foo` and delete the extracted files (but keep the archive)
+afterwards:
+
+```sh
+foo $(ssget -ei10)
+ssget -ci10
+```
+
+### Example 4
+Delete the archive for matrix with ID=10
+
+```sh
+ssget -ri10
+```
+
 License
 -------
 BSD 3-clause
+
