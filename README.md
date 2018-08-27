@@ -7,16 +7,28 @@ the Suite Sparse collection ([sparse.tamu.edu](sparse.tamu.edu)).
 Dependencies
 ------------
 
+Standard UNIX tools:
+
 *   bash
 *   curl
-*   tar (for `-e` option with `-t MM` or `-t RB`)
+*   tar (only for `-e` option with `-t MM` or `-t RB`)
+*   make (only for installation)
 
 
 Installation
 ------------
 
-Copy the `ssget` script to your path.
+```sh
+git clone https://github.com/ginkgo-project/ssget.git
+cd ssget
+sudo make install
+```
 
+Or a one-liner that doesn't create a local copy of the repository:
+
+```sh
+sudo curl -Lo /usr/local/bin/ssget https://raw.githubusercontent.com/ginkgo-project/ssget/master/ssget
+```
 
 Usage
 -----
