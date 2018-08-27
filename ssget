@@ -77,7 +77,7 @@ get_properties() {
         PROPS=$(head -$((${MATRIX_ID} + 2)) "${ARCHIVE_LOCATION}/ssstats.csv" \
                 | tail -1)
     fi
-    echo ${PROPS}
+    echo "${PROPS}"
 }
 
 
@@ -141,6 +141,7 @@ EOT
 download_archive() {
     PATH_INFO=($(get_path_info))
     if [ ! -f ${PATH_INFO[4]} ]; then
+        mkdir -p $(dirname ${PATH_INFO[4]})
         curl -Lo ${PATH_INFO[4]} ${PATH_INFO[3]}
     fi
     echo ${PATH_INFO[4]}
