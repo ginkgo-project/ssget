@@ -118,6 +118,14 @@ Delete the archive for matrix with ID=10
 ssget -ri10
 ```
 
+### Example 5
+Search the database with `400 <= #rows <= 450` and
+`numerical symmertry >= 0.99`
+
+```sh
+./ssget -s '[ @rows -ge 400 ] && [ @rows -le 450 ] && [ $(echo "@nsym>=0.99"| bc) -eq 1 ]'
+```
+
 License
 -------
 BSD 3-clause

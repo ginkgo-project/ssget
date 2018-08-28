@@ -82,7 +82,7 @@ get_properties() {
 
 
 get_property() {
-    IFS="," read -ra PROPS <<< $(get_properties)
+    IFS="," read -ra PROPS <<< "$(get_properties)"
     NPARAM=${#PROP_NAMES[@]}
     for (( i=0; i < ${NPARAM}; ++i)); do
         if [ "$1" = "${PROP_NAMES[$i]}" ]; then
@@ -95,7 +95,7 @@ get_property() {
 
 get_as_json() {
     BOOL_MAP=("false" "true")
-    IFS="," read -ra PROPS <<< $(get_properties)
+    IFS="," read -ra PROPS <<< "$(get_properties)"
     cat << JSON 
 {
     "group": "${PROPS[0]}",
@@ -200,6 +200,46 @@ get_database_version() {
 }
 
 
+CONDITION=""
+TEMP_PROPS=""
+replace_placeholder() {
+    BOOL_MAP=("false" "true")
+    EVAL_COND=${CONDITION}
+    # s/@kind/${TEMP_PROPS[11]}/g is failed because s/@kind/2D/3D Problem/g has 
+    # too many slashes
+    REPLACE="s/@group/${TEMP_PROPS[0]}/g;"
+    REPLACE="${REPLACE}s/@name/${TEMP_PROPS[1]}/g;"
+    REPLACE="${REPLACE}s/@rows/${TEMP_PROPS[2]}/g;"
+    REPLACE="${REPLACE}s/@cols/${TEMP_PROPS[3]}/g;"
+    REPLACE="${REPLACE}s/@nonzeros/${TEMP_PROPS[4]}/g;"
+    REPLACE="${REPLACE}s/@real/${BOOL_MAP[${TEMP_PROPS[5]}]}/g;"
+    REPLACE="${REPLACE}s/@binary/${BOOL_MAP[${TEMP_PROPS[6]}]}/g;"
+    REPLACE="${REPLACE}s/@2d3d/${BOOL_MAP[${TEMP_PROPS[7]}]}/g;"
+    REPLACE="${REPLACE}s/@posdef/${BOOL_MAP[${TEMP_PROPS[8]}]}/g;"
+    REPLACE="${REPLACE}s/@psym/${TEMP_PROPS[9]}/g;"
+    REPLACE="${REPLACE}s/@nsym/${TEMP_PROPS[10]}/g;"
+    REPLACE="${REPLACE}s~@kind~${TEMP_PROPS[11]}~g"
+    EVAL_COND=$(echo $EVAL_COND | sed -e "$REPLACE")
+}
+
+
+search_database() {
+    download_info
+    INDEX=-2;
+    while IFS='' read -r LINE || [[ -n "$LINE" ]]; do
+        INDEX=$(( $INDEX + 1 ))
+        if [[ $INDEX -gt 0 ]]; then
+            IFS="," read -ra TEMP_PROPS <<< "$LINE"
+            EVAL_COND=""
+            replace_placeholder
+            if eval $EVAL_COND ; then
+                echo $INDEX
+            fi
+        fi
+    done < "${ARCHIVE_LOCATION}/ssstats.csv"
+}
+
+
 print_usage_and_exit() {
     cat 1>&2 << EOT
 Usage: $0 [options]
@@ -220,6 +260,8 @@ Available options:
     -t TYPE      matrix type, TYPE is one of: MM (matrix market, '.mtx'), RB
                  (Rutherford Boeing, '.rb'), mat (MATLAB, '.mat')
     -v           get database version
+    -s           seatch database with conditions. It uses @PROPERTY as the
+                 placeholder
 
 Calling $0 without arguments is equivalent to: $0 -i 0 -t MM -v
 EOT
@@ -227,7 +269,7 @@ EOT
 }
 
 
-while getopts ":cdefhi:jnp:rt:v" opt; do
+while getopts ":cdefhi:jnp:rt:vs:" opt; do
     case ${opt} in
         :)
             echo 1>&2 "Option -${OPTARG} provided without an argument"
@@ -286,6 +328,10 @@ while getopts ":cdefhi:jnp:rt:v" opt; do
             ;;
         v)
             COMMAND=get_database_version
+            ;;
+        s)
+            COMMAND=search_database
+            CONDITION=${OPTARG}
             ;;
     esac
 done
