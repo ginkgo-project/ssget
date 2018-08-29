@@ -98,6 +98,7 @@ get_as_json() {
     IFS="," read -ra PROPS <<< "$(get_properties)"
     cat << JSON 
 {
+    "id": ${MATRIX_ID},
     "group": "${PROPS[0]}",
     "name": "${PROPS[1]}",
     "rows": ${PROPS[2]},
