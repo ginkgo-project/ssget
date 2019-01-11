@@ -54,6 +54,8 @@ Available options:
     -t TYPE      matrix type, TYPE is one of: MM (matrix market, '.mtx'), RB
                  (Rutherford Boeing, '.rb'), mat (MATLAB, '.mat')
     -v           get database version
+    -s           search database with conditions. It uses @PROPERTY as the
+                 placeholder
 
 Calling ssget without arguments is equivalent to: ssget -i 0 -t MM -v
 ```
