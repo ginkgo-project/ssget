@@ -57,6 +57,7 @@ PROP_NAMES=(
     "nsym"
     "kind")
 
+SILENT_MODE=false 
 
 redownload_info() {
     curl -Lo "${ARCHIVE_LOCATION}/ssstats.csv" "${SS_URL}/files/ssstats.csv"
@@ -151,9 +152,15 @@ download_archive() {
 
 extract_archive() {
     PATH_INFO=($(get_path_info))
-    download_archive >/dev/null
+    if [ "$SILENT_MODE" = false ]; then
+    	download_archive >/dev/null
+    else
+	download_archive &>/dev/null
+    fi
     if [ "${MATRIX_TYPE}" = "mat" ]; then
-        echo ${PATH_INFO[4]}
+	if [ "$SILENT_MODE" = false ]; then
+	   echo ${PATH_INFO[4]}
+	fi
         return
     fi
     mkdir -p ${PATH_INFO[5]}
@@ -163,7 +170,9 @@ extract_archive() {
     else
         EXT="mtx"
     fi
-    echo "${PATH_INFO[5]}/${PATH_INFO[1]}.${EXT}"
+    if [ "$SILENT_MODE" = false ]; then
+        echo "${PATH_INFO[5]}/${PATH_INFO[1]}.${EXT}"
+    fi
 }
 
 
@@ -263,6 +272,7 @@ Available options:
     -v           get database version
     -s           search database with conditions. It uses @PROPERTY as the
                  placeholder
+    -o 		 suppress the output to the console
 
 Calling $0 without arguments is equivalent to: $0 -i 0 -t MM -v
 EOT
@@ -270,7 +280,7 @@ EOT
 }
 
 
-while getopts ":cdefhi:jnp:rt:vs:" opt; do
+while getopts ":cdefhi:jnp:rt:vs:o" opt; do
     case ${opt} in
         :)
             echo 1>&2 "Option -${OPTARG} provided without an argument"
@@ -308,6 +318,9 @@ while getopts ":cdefhi:jnp:rt:vs:" opt; do
         n)
             COMMAND=get_collection_size
             ;;
+	o)
+	    SILENT_MODE=true
+	    ;;
         p)
             PROP_LIST="group|name|rows|cols|nonzeros"
             PROP_LIST="${PROP_LIST}|real|binary|2d3d|posdef|psym|nsym|kind"
