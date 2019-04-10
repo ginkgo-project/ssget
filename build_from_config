@@ -106,13 +106,16 @@ while IFS='' read -r LINE || [[ -n "$LINE" ]]; do
                 PLACEHOLDER="@nsym" get_min_and_max_float
                 ;;
             MatrixName)
-                COMMANDS="${COMMANDS} && [[ \"@name\" =~ \"${VAL}\" ]]"
+                TEMP="[[ \$(echo \"@name\" | grep -i \"${VAL}\") != \"\" ]]"
+                COMMANDS="${COMMANDS} && ${TEMP}"
                 ;;
             GroupName)
-                COMMANDS="${COMMANDS} && [[ \"@group\" =~ \"${VAL}\" ]]"
+                TEMP="[[ \$(echo \"@group\" | grep -i \"${VAL}\") != \"\" ]]"
+                COMMANDS="${COMMANDS} && ${TEMP}"
                 ;;
             Kind)
-                COMMANDS="${COMMANDS} && [[ \"@kind\" =~ \"${VAL}\" ]]"
+                TEMP="[[ \$(echo \"@kind\" | grep -i \"${VAL}\") != \"\" ]]"
+                COMMANDS="${COMMANDS} && ${TEMP}"
                 ;;
             Keyword)
                 TEMP="[[ \$(echo \"@name\" | grep -i \"${VAL}\") != \"\" ]]"
