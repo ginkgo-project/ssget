@@ -61,7 +61,7 @@ Difference from ([sparse.tamu.edu](sparse.tamu.edu))
     `keyword` (it is case insensitive)
 - Symmetric:
     [sparse.tamu.edu](sparse.tamu.edu) can verify the complex symmetric
-    (A == A.T), but this program can not.
+    (A == A.'), but this program can not.
 
 
 Example
