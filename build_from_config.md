@@ -72,7 +72,7 @@ author, editor and notes.
     (A == A.'), but this script can not.
 
 
-Example
+Examples
 -------
 
 This section shows some configuration files and outputs.
