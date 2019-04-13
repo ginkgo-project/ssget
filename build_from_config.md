@@ -10,7 +10,7 @@ This tries to allow the same options as the filters on
 Usage
 -----
 
-`./build_from_config configfile`
+`./build_from_config.sh configfile`
 
 
 ### Syntax
@@ -36,13 +36,15 @@ values.
     - Complex : is not real
     - `Not_Implemented` - Integer
     - Binary : is binary
+    - Any
 - SpecialStructure:OPTION
     - Square : rows == cols
     - Rectangle : rows != cols
     - Symmetric : Square, RealValue (including binary), nsym == 1
     - Unsymmetric : Square, nsym != 1
-    - Hermitian : Square, ComplexValue, nsym ==1
+    - Hermitian : Square, ComplexValue, nsym == 1
     - `Not_Implemented` - Skew-Symmetric
+    - Any
 - PositiveDefinite:true or false
 - MatrixName:string
 - GroupName:string
@@ -84,7 +86,7 @@ Rows:400,450
 NumericalSymmetry:,0.99
 ```
 the output of `./build_from_config example1` is
-`[ @rows -ge 400 ] && [ @rows -le 450 ] && [ $(echo "@nsym <= 0.99" | bc) -eq 1 ]`
+`[ @rows -ge 400 ] && [ @rows -le 450 ] && [ $(awk "BEGIN{print(@nsym <= 0.99)}") -eq 1 ]`
 
 
 ### Example 2
