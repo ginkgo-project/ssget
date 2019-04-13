@@ -1,21 +1,28 @@
 BuildFromConfig
 ---------------
 
-It try to allow the same options as the filters on
+The tool BuildFromConfig builds from a configuration file the searching command 
+to be passed to the command ssget -s.
+This tries to allow the same options as the filters on 
 ([sparse.tamu.edu](sparse.tamu.edu)).
 
 
 Usage
 -----
 
-`./build_from_config.md configfile`
+`./build_from_config configfile`
 
-The output is the searching command. `./ssget -s 'output'`
 
-In `configfile`, it allows use the `//` to mark the comments
-`OPT_NAME:VAL` for setting the option value
+### Syntax
+This section describes the syntax of the input file `configfile`.
 
-`No` means `Not_Implement`
+- `OPT_NAME:VAL` for setting the option value
+- `//` can be used to mark comments.
+
+
+### Accepted Configuration
+This section describes the detail of the accepted configuration options and 
+values.
 
 - Keyword:string
 - Rows:min,max
@@ -23,11 +30,11 @@ In `configfile`, it allows use the `//` to mark the comments
 - Nonzeros:min,max
 - PatternSymmetry:min,max
 - NumericalSymmetry:min,max
-- `NO`|Strongly Connected Components
+- `Not_Implemented` - Strongly Connected Components
 - Rutherford-BoeingType:OPTION
     - Real : is real but not binary
     - Complex : is not real
-    - `NO`|Integer
+    - `Not_Implemented` - Integer
     - Binary : is binary
 - SpecialStructure:OPTION
     - Square : rows == cols
@@ -35,49 +42,54 @@ In `configfile`, it allows use the `//` to mark the comments
     - Symmetric : Square, RealValue (including binary), nsym == 1
     - Unsymmetric : Square, nsym != 1
     - Hermitian : Square, ComplexValue, nsym ==1
-    - `NO`|Skew-Symmetric
+    - `Not_Implemented` - Skew-Symmetric
 - PositiveDefinite:true or false
 - MatrixName:string
 - GroupName:string
 - Kind:string
-- `NO`|Matrix ID
-- `NO`|Year
-
-
-Detail
-------
+- `Not_Implemented` - Matrix ID
+- `Not_Implemented` - Year
 
 For the `OPT:min,max`, it allows only `min` or `max` with keeping `,`
-`OPT:,max` means the condition `OPT<=max`
+`OPT:,max` means the condition `OPT <= max`
 
-For the `OPT:OPTION`, it only allows one option now.
+For options of the form `OPT:OPTION`, only one option can be specified for now.
+
+For string of the form `OPT:string`, this runs a case-insensitive case search 
+for `string` inside the `OPT`
 
 
-Difference from ([sparse.tamu.edu](sparse.tamu.edu))
-----------------------------------------------------
+### Difference from ([sparse.tamu.edu](sparse.tamu.edu))
 
-- Some Not_Implement options or settings
-- Keyword: verify whether `kind`, `groupname`, `matrixname` contain the
-    `keyword` (it is case insensitive)
+- The options or settings marked as `Not_Implemented` block this script.
+- Keyword: run a case-insensitive case search inside kind, group and name, but 
+[sparse.tamu.edu](sparse.tamu.edu) runs a search inside group, name, kind, 
+author, editor and notes.
 - Symmetric:
     [sparse.tamu.edu](sparse.tamu.edu) can verify the complex symmetric
-    (A == A.'), but this program can not.
+    (A == A.'), but this script can not.
 
 
 Example
 -------
+
+This section shows some configuration files and outputs.
+
+
+### Example 1
 example in ssget: `400 <= #rows <= 450 and numerical symmertry >= 0.99`
 ```
-// Filename config
+// Filename example1
 Rows:400,450
 NumericalSymmetry:,0.99
 ```
-the output of `./build_from_config config` is
+the output of `./build_from_config example1` is
 `[ @rows -ge 400 ] && [ @rows -le 450 ] && [ $(echo "@nsym <= 0.99" | bc) -eq 1 ]`
 
 
+### Example 2
 ```
-// Filename config
+// Filename example2
 Rows:200,
 Columns:,300
 Nonzeros:1000,
@@ -85,6 +97,3 @@ SpecialStructure:Symmetric
 PositiveDefinite:true
 ```
 output is `[ @rows -ge 200 ] && [ @cols -le 300 ] && [ @nonzeros -ge 1000 ] && [[ @real == true ]] && [[ @rows == @cols ]] && [[ @nsym == 1 ]] && [[ @posdef == true ]]`
-
-
-
