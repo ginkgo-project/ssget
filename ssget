@@ -280,7 +280,8 @@ Available options:
     -s                     search database with conditions. It uses @PROPERTY as the
                            placeholder
     
-    --custom-archive PATH  set a custom archive location for downloaded and extracted files
+    --custom-archive PATH  set a custom archive location for downloaded and extracted files.
+                           the default archive location is "\${HOME}/.config/ssget"
 
 Calling $0 without arguments is equivalent to: $0 -i 0 -t MM -v
 EOT
