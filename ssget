@@ -262,49 +262,32 @@ print_usage_and_exit() {
 Usage: $0 [options]
 
 Available options:
-    -c                     clean files extracted from archive
-    -d                     (re)download matrix info file
-    -e                     download matrix and extract archive
-    -f                     download matrix and get path to archive
-    -h                     show this help
-    -i ID                  matrix id
-    -j                     print information about the matrix in JSON format
-    -n                     get number of matrices in collection
-    -p PROPERTY            print information about the matrix, PROPERTY is the propery to
-                           print, one of group, name, rows, cols, nonzeros, real, binary,
-                           2d3d, posdef, psym, nsym, kind
-    -r                     remove archive
-    -t TYPE                matrix type, TYPE is one of: MM (matrix market, '.mtx'), RB
-                           (Rutherford Boeing, '.rb'), mat (MATLAB, '.mat')
-    -v                     get database version
-    -s                     search database with conditions. It uses @PROPERTY as the
-                           placeholder
-    
-    --custom-archive PATH  set a custom archive location for downloaded and extracted files.
-                           the default archive location is "\${HOME}/.config/ssget"
+    -a PATH          set a custom archive location for downloaded and extracted files.
+                     the default archive location is "\${HOME}/.config/ssget"
+    -c               clean files extracted from archive
+    -d               (re)download matrix info file
+    -e               download matrix and extract archive
+    -f               download matrix and get path to archive
+    -h               show this help
+    -i ID            matrix id
+    -j               print information about the matrix in JSON format
+    -n               get number of matrices in collection
+    -p PROPERTY      print information about the matrix, PROPERTY is the propery to
+                     print, one of group, name, rows, cols, nonzeros, real, binary,
+                     2d3d, posdef, psym, nsym, kind
+    -r               remove archive
+    -t TYPE          matrix type, TYPE is one of: MM (matrix market, '.mtx'), RB
+                     (Rutherford Boeing, '.rb'), mat (MATLAB, '.mat')
+    -v               get database version
+    -s               search database with conditions. It uses @PROPERTY as the
+                     placeholder
 
 Calling $0 without arguments is equivalent to: $0 -i 0 -t MM -v
 EOT
     exit $1
 }
 
-for arg in "$@"; do
-  shift
-  case "$arg" in
-    "--custom-archive")
-      CUSTOM_ARCHIVE="$1"
-      shift
-      ;;
-    "--custom-archive="*)
-      CUSTOM_ARCHIVE="${arg#*=}"
-      ;;
-    *)
-      set -- "$@" "$arg"
-      ;;
-  esac
-done
-
-while getopts ":cdefhi:jnp:rt:vs:" opt; do
+while getopts ":a:cdefhi:jnp:rt:vs:" opt; do
     case ${opt} in
         :)
             echo 1>&2 "Option -${OPTARG} provided without an argument"
@@ -313,6 +296,9 @@ while getopts ":cdefhi:jnp:rt:vs:" opt; do
         \?)
             echo 1>&2 "Unknown option: -${OPTARG}"
             print_usage_and_exit 1
+            ;;
+        a)  
+            CUSTOM_ARCHIVE="${OPTARG}"
             ;;
         c)  
             COMMAND=clean_extracted
