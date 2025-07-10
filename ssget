@@ -39,8 +39,6 @@ SS_URL="https://sparse.tamu.edu"
 ARCHIVE_LOCATION="${HOME}/.config/ssget"
 CUSTOM_ARCHIVE=""
 
-mkdir -p "${ARCHIVE_LOCATION}"
-
 COMMAND=get_database_version
 MATRIX_TYPE="MM"
 MATRIX_ID=1
@@ -357,5 +355,10 @@ while getopts ":a:cdefhi:jnp:rt:vs:" opt; do
     esac
 done
 
+if [ -z "$CUSTOM_ARCHIVE" ]; then
+    mkdir -p "${ARCHIVE_LOCATION}"
+else
+    mkdir -p "${CUSTOM_ARCHIVE}"
+fi
 
 ${COMMAND}
