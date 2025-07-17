@@ -37,8 +37,7 @@ set -e
 THIS_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" &>/dev/null && pwd )
 SS_URL="https://sparse.tamu.edu"
 ARCHIVE_LOCATION="${HOME}/.config/ssget"
-
-mkdir -p "${ARCHIVE_LOCATION}"
+CUSTOM_ARCHIVE=""
 
 COMMAND=get_database_version
 MATRIX_TYPE="MM"
@@ -57,14 +56,24 @@ PROP_NAMES=(
     "nsym"
     "kind")
 
+get_current_archive_location() {
+    if [ -n "${CUSTOM_ARCHIVE}" ]; then
+        echo "${CUSTOM_ARCHIVE}"
+    else
+        echo "${ARCHIVE_LOCATION}"
+    fi
+}
 
 redownload_info() {
-    curl -Lo "${ARCHIVE_LOCATION}/ssstats.csv" "${SS_URL}/files/ssstats.csv"
+    local current_archive_loc=$(get_current_archive_location)
+    mkdir -p "${current_archive_loc}"
+    curl -Lo "${current_archive_loc}/ssstats.csv" "${SS_URL}/files/ssstats.csv"
 }
 
 
 download_info() {
-    if [ ! -f "${ARCHIVE_LOCATION}/ssstats.csv" ]; then
+    local current_archive_loc=$(get_current_archive_location)
+    if [ ! -f "${current_archive_loc}/ssstats.csv" ]; then
         redownload_info
     fi
 }
@@ -73,8 +82,9 @@ download_info() {
 PROPS=""
 get_properties() {
     download_info
+    local current_archive_loc=$(get_current_archive_location)
     if [ "${PROPS}" == "" ]; then
-        PROPS=$(head -$((${MATRIX_ID} + 2)) "${ARCHIVE_LOCATION}/ssstats.csv" \
+        PROPS=$(head -$((${MATRIX_ID} + 2)) "${current_archive_loc}/ssstats.csv" \
                 | tail -1)
     fi
     echo "${PROPS}"
@@ -117,6 +127,7 @@ JSON
 
 
 get_path_info() {
+    local current_archive_loc=$(get_current_archive_location)
     GROUP=$(get_property group)
     NAME=$(get_property name)
     if [ "${MATRIX_TYPE}" = "mat" ]; then
@@ -126,8 +137,8 @@ get_path_info() {
     fi
     MATRIX_URI="${MATRIX_TYPE}/${GROUP}/${NAME}"
     UPSTREAM_URL="${SS_URL}/${MATRIX_URI}.${EXT}"
-    DOWNLOAD_PATH="${ARCHIVE_LOCATION}/${MATRIX_URI}.${EXT}"
-    EXTRACT_PATH="${ARCHIVE_LOCATION}/${MATRIX_URI}"
+    DOWNLOAD_PATH="${current_archive_loc}/${MATRIX_URI}.${EXT}"
+    EXTRACT_PATH="${current_archive_loc}/${MATRIX_URI}"
     cat <<- EOT
         ${GROUP}
         ${NAME}
@@ -190,14 +201,16 @@ remove_archive() {
 
 get_collection_size() {
     download_info
-    head -1 "${ARCHIVE_LOCATION}/ssstats.csv"
+    local current_archive_loc=$(get_current_archive_location)
+    head -1 "${current_archive_loc}/ssstats.csv"
 }
 
 
 get_database_version() {
     download_info
-    echo -n "${ARCHIVE_LOCATION}/ssstats.csv "
-    echo "$(head -2 "${ARCHIVE_LOCATION}/ssstats.csv" | tail -1)"
+    local current_archive_loc=$(get_current_archive_location)
+    echo -n "${current_archive_loc}/ssstats.csv "
+    echo "$(head -2 "${current_archive_loc}/ssstats.csv" | tail -1)"
 }
 
 
@@ -226,6 +239,7 @@ replace_placeholder() {
 
 search_database() {
     download_info
+    local current_archive_loc=$(get_current_archive_location)
     INDEX=-2;
     while IFS='' read -r LINE || [[ -n "$LINE" ]]; do
         INDEX=$(( $INDEX + 1 ))
@@ -237,7 +251,7 @@ search_database() {
                 echo $INDEX
             fi
         fi
-    done < "${ARCHIVE_LOCATION}/ssstats.csv"
+    done < "${current_archive_loc}/ssstats.csv"
 }
 
 
@@ -246,31 +260,32 @@ print_usage_and_exit() {
 Usage: $0 [options]
 
 Available options:
-    -c           clean files extracted from archive
-    -d           (re)download matrix info file
-    -e           download matrix and extract archive
-    -f           download matrix and get path to archive
-    -h           show this help
-    -i ID        matrix id
-    -j           print information about the matrix in JSON format
-    -n           get number of matrices in collection
-    -p PROPERTY  print information about the matrix, PROPERTY is the propery to
-                 print, one of group, name, rows, cols, nonzeros, real, binary,
-                 2d3d, posdef, psym, nsym, kind
-    -r           remove archive
-    -t TYPE      matrix type, TYPE is one of: MM (matrix market, '.mtx'), RB
-                 (Rutherford Boeing, '.rb'), mat (MATLAB, '.mat')
-    -v           get database version
-    -s           search database with conditions. It uses @PROPERTY as the
-                 placeholder
+    -a PATH          set a custom archive location for downloaded and extracted files.
+                     the default archive location is "\${HOME}/.config/ssget"
+    -c               clean files extracted from archive
+    -d               (re)download matrix info file
+    -e               download matrix and extract archive
+    -f               download matrix and get path to archive
+    -h               show this help
+    -i ID            matrix id
+    -j               print information about the matrix in JSON format
+    -n               get number of matrices in collection
+    -p PROPERTY      print information about the matrix, PROPERTY is the propery to
+                     print, one of group, name, rows, cols, nonzeros, real, binary,
+                     2d3d, posdef, psym, nsym, kind
+    -r               remove archive
+    -t TYPE          matrix type, TYPE is one of: MM (matrix market, '.mtx'), RB
+                     (Rutherford Boeing, '.rb'), mat (MATLAB, '.mat')
+    -v               get database version
+    -s               search database with conditions. It uses @PROPERTY as the
+                     placeholder
 
 Calling $0 without arguments is equivalent to: $0 -i 0 -t MM -v
 EOT
     exit $1
 }
 
-
-while getopts ":cdefhi:jnp:rt:vs:" opt; do
+while getopts ":a:cdefhi:jnp:rt:vs:" opt; do
     case ${opt} in
         :)
             echo 1>&2 "Option -${OPTARG} provided without an argument"
@@ -279,6 +294,9 @@ while getopts ":cdefhi:jnp:rt:vs:" opt; do
         \?)
             echo 1>&2 "Unknown option: -${OPTARG}"
             print_usage_and_exit 1
+            ;;
+        a)  
+            CUSTOM_ARCHIVE="${OPTARG}"
             ;;
         c)  
             COMMAND=clean_extracted
@@ -337,5 +355,10 @@ while getopts ":cdefhi:jnp:rt:vs:" opt; do
     esac
 done
 
+if [ -z "$CUSTOM_ARCHIVE" ]; then
+    mkdir -p "${ARCHIVE_LOCATION}"
+else
+    mkdir -p "${CUSTOM_ARCHIVE}"
+fi
 
 ${COMMAND}
